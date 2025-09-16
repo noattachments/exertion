@@ -6,6 +6,7 @@
         "pw:ct": "playwright test -c playwright-ct.config.ts",
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
+        "prod": "npm run build",
         "dev": "vite",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
