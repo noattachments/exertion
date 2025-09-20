@@ -53,15 +53,16 @@ FROM php:8.3-fpm-alpine AS production
 #
 WORKDIR /var/www/html
 
-# Install only runtime PHP extensions
+# Install only runtime dependencies (no build tools)
 RUN apk add --no-cache \
-    libzip-dev libpng-dev libjpeg-turbo-dev freetype-dev \
-    oniguruma-dev icu-dev zlib-dev libxml2-dev postgresql-dev build-base autoconf make g++ \
+    libzip libpng libjpeg-turbo freetype \
+    oniguruma icu zlib libxml2 \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
-        pdo_mysql pdo_pgsql zip gd mbstring intl opcache exif pcntl xml \
+        pdo_mysql zip gd mbstring intl opcache exif pcntl xml \
     && pecl install redis \
-    && docker-php-ext-enable redis
+    && docker-php-ext-enable redis \
+    && apk del --no-cache build-base autoconf make g++
 
 # Create non-root user
 RUN addgroup -g 1000 app && \
@@ -78,11 +79,14 @@ COPY --from=builder --chown=app:app /app/database ./database
 COPY --from=builder --chown=app:app /app/resources/views ./resources/views
 COPY --from=builder --chown=app:app /app/artisan ./artisan
 
+# Set proper permissions
+RUN chmod -R 755 bootstrap \
+    && chmod -R 775 bootstrap/cache \
+    && chmod -R 755 storage \
+    && chmod -R 775 storage/logs
+
 # Switch to non-root user
 USER app
-
-RUN chmod -R 775 bootstrap
-RUN chmod -R 775 bootstrap/cache
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

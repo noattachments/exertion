@@ -1,57 +1,62 @@
-version: '3.8'
-
 services:
     app:
-        build:
-            context: .
-            dockerfile: .docker/php/Dockerfile
-        container_name: app
+        image: exertion-app:${VERSION:-latest}
+        container_name: exertion-app
         restart: unless-stopped
         working_dir: /var/www/html
-        volumes:
-            - .:/var/www/html
-            - ./storage/logs:/var/www/html/storage/logs
         environment:
             - APP_ENV=production
             - APP_DEBUG=false
             - LOG_CHANNEL=stderr
+            - DB_HOST=database
+            - DB_DATABASE=${DB_DATABASE}
+            - DB_USERNAME=${DB_USERNAME}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - REDIS_HOST=redis
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
         depends_on:
             - database
             - redis
         networks:
-            - app_network
+            - exertion_network
         healthcheck:
             test: ["CMD", "php-fpm-healthcheck"]
             interval: 30s
             timeout: 10s
             retries: 3
+        deploy:
+            resources:
+                limits:
+                    memory: 512M
+                reservations:
+                    memory: 256M
 
     webserver:
-        build:
-            context: .
-            dockerfile: .docker/nginx/Dockerfile
-        container_name: laravel_nginx
+        image: exertion-nginx:${VERSION:-latest}
+        container_name: exertion-nginx
         restart: unless-stopped
         ports:
-            - "80:8080"
-        volumes:
-            - .:/var/www/html
-            - ./storage/logs:/var/www/html/storage/logs
+            - "${HTTP_PORT:-80}:8080"
+            - "${HTTPS_PORT:-443}:8443"
         depends_on:
             - app
         networks:
-            - app_network
+            - exertion_network
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8080"]
             interval: 30s
             timeout: 10s
             retries: 3
+        deploy:
+            resources:
+                limits:
+                    memory: 128M
+                reservations:
+                    memory: 64M
 
     database:
-        build:
-            context: .
-            dockerfile: .docker/mysql/Dockerfile
-        container_name: laravel_mysql
+        image: mysql:8.0
+        container_name: exertion-mysql
         restart: unless-stopped
         environment:
             - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
@@ -60,28 +65,33 @@ services:
             - MYSQL_PASSWORD=${DB_PASSWORD}
         volumes:
             - mysql_data:/var/lib/mysql
-            - ./.docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-        ports:
-            - "3306:3306"
         networks:
-            - app_network
+            - exertion_network
         command: --default-authentication-plugin=mysql_native_password
+        deploy:
+            resources:
+                limits:
+                    memory: 1G
+                reservations:
+                    memory: 512M
 
     redis:
-        build:
-            context: .
-            dockerfile: .docker/redis/Dockerfile
-        container_name: redis
+        image: redis:7-alpine
+        container_name: exertion-redis
         restart: unless-stopped
         environment:
             - REDIS_PASSWORD=${REDIS_PASSWORD}
         volumes:
             - redis_data:/data
-        ports:
-            - "6379:6379"
         networks:
-            - app_network
-        command: redis-server /usr/local/etc/redis/redis.conf --requirepass $${REDIS_PASSWORD}
+            - exertion_network
+        command: redis-server --requirepass ${REDIS_PASSWORD}
+        deploy:
+            resources:
+                limits:
+                    memory: 256M
+                reservations:
+                    memory: 128M
 
 volumes:
     mysql_data:
@@ -90,5 +100,5 @@ volumes:
         driver: local
 
 networks:
-    app_network:
+    exertion_network:
         driver: bridge
