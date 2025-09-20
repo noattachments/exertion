@@ -1,0 +1,26 @@
+[mysqld]
+user                    = mysql
+default_authentication_plugin = mysql_native_password
+pid-file                = /var/run/mysqld/mysqld.pid
+socket                  = /var/run/mysqld/mysqld.sock
+port                    = 3306
+datadir                 = /var/lib/mysql
+
+# Character set
+character-set-server    = utf8mb4
+collation-server        = utf8mb4_unicode_ci
+
+# Network
+bind-address            = 0.0.0.0
+max_allowed_packet      = 256M
+
+# Performance (minimal settings)
+innodb_buffer_pool_size = 128M
+innodb_log_file_size    = 64M
+innodb_file_per_table   = 1
+
+# Connections
+max_connections         = 100
+
+[client]
+default-character-set   = utf8mb4
