@@ -1,0 +1,120 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Build artifacts
+public/build/
+public/hot
+public/storage
+storage/app/public
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/testing/
+storage/framework/views/
+storage/logs/
+bootstrap/cache/
+
+# Testing
+tests/
+phpunit.xml
+.phpunit.result.cache
+coverage/
+.nyc_output
+
+# Development tools
+.php_cs.cache
+.php-cs-fixer.cache
+.phpstan.neon
+.phpstan.cache
+
+# Composer
+vendor/
+composer.lock
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Cache directories
+.cache/
+cache/
+
+# Playwright
+playwright/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Database files
+*.sqlite
+*.db
+
+# Local development
+docker-compose.override.yml
+.dockerignore
