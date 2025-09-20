@@ -1,5 +1,43 @@
 # Docker Deployment Guide
 
+## File Structure
+
+```
+├── docker-compose.yml          # Production environment
+├── docker-compose.local.yml    # Local development environment
+├── Makefile                    # Easy command management
+├── build-and-push.sh          # Registry deployment script
+└── .docker/                    # Docker configuration files
+    ├── php/Dockerfile
+    ├── nginx/Dockerfile
+    ├── mysql/Dockerfile
+    └── redis/Dockerfile
+```
+
+## Quick Start with Makefile
+
+The project includes a comprehensive Makefile for easy Docker management:
+
+```bash
+# Show all available commands
+make help
+
+# Local development
+make dev          # Complete development setup
+make up-local     # Start local environment
+make shell        # Open shell in app container
+make artisan CMD="migrate"  # Run Laravel commands
+
+# Production
+make build-prod   # Build production images
+make up-prod      # Start production environment
+make deploy       # Complete production deployment
+
+# Testing
+make test         # Run all tests
+make test-php     # Run PHP tests only
+```
+
 ## Pre-Deployment Checklist
 
 ### 1. Security Configuration
@@ -46,7 +84,11 @@ docker push your-registry/exertion-nginx:${GIT_COMMIT}
 
 #### Use Production Compose File
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+# Using Makefile (recommended)
+make up-prod
+
+# Or directly with docker-compose
+docker-compose up -d
 ```
 
 ## Security Best Practices
@@ -164,8 +206,11 @@ jobs:
 ### Health Checks
 ```bash
 # Check container health
-docker ps --format "table {{.Names}}\t{{.Status}}"
+make health
 
 # View logs
-docker-compose -f docker-compose.prod.yml logs -f app
+make logs-prod
+
+# Or directly with docker-compose
+docker-compose logs -f app
 ```

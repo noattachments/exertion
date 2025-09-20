@@ -6,21 +6,27 @@ services:
             tags:
                 - exertion-app:${VERSION:-latest}
                 - exertion-app:${GIT_COMMIT:-latest}
-        container_name: app
+        container_name: exertion-app-local
         restart: unless-stopped
         working_dir: /var/www/html
         volumes:
             - .:/var/www/html
             - ./storage/logs:/var/www/html/storage/logs
         environment:
-            - APP_ENV=production
-            - APP_DEBUG=false
+            - APP_ENV=local
+            - APP_DEBUG=true
             - LOG_CHANNEL=stderr
+            - DB_HOST=database
+            - DB_DATABASE=${DB_DATABASE:-exertion}
+            - DB_USERNAME=${DB_USERNAME:-exertion_user}
+            - DB_PASSWORD=${DB_PASSWORD:-exertion}
+            - REDIS_HOST=redis
+            - REDIS_PASSWORD=${REDIS_PASSWORD:-redis}
         depends_on:
             - database
             - redis
         networks:
-            - app_network
+            - exertion_network
         healthcheck:
             test: ["CMD", "php-fpm-healthcheck"]
             interval: 30s
@@ -34,17 +40,17 @@ services:
             tags:
                 - exertion-nginx:${VERSION:-latest}
                 - exertion-nginx:${GIT_COMMIT:-latest}
-        container_name: webserver_nginx
+        container_name: exertion-nginx-local
         restart: unless-stopped
         ports:
-            - "80:8080"
+            - "8080:8080"
         volumes:
             - .:/var/www/html
             - ./storage/logs:/var/www/html/storage/logs
         depends_on:
             - app
         networks:
-            - app_network
+            - exertion_network
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8080"]
             interval: 30s
@@ -55,37 +61,37 @@ services:
         build:
             context: .
             dockerfile: .docker/mysql/Dockerfile
-        container_name: mysql
+        container_name: exertion-mysql-local
         restart: unless-stopped
         environment:
-            - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-            - MYSQL_DATABASE=${DB_DATABASE}
-            - MYSQL_USER=${DB_USERNAME}
-            - MYSQL_PASSWORD=${DB_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root}
+            - MYSQL_DATABASE=${DB_DATABASE:-exertion}
+            - MYSQL_USER=${DB_USERNAME:-exertion_user}
+            - MYSQL_PASSWORD=${DB_PASSWORD:-exertion}
         volumes:
             - mysql_data:/var/lib/mysql
             - ./.docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
         ports:
             - "3306:3306"
         networks:
-            - app_network
+            - exertion_network
         command: --default-authentication-plugin=mysql_native_password
 
     redis:
         build:
             context: .
             dockerfile: .docker/redis/Dockerfile
-        container_name: redis
+        container_name: exertion-redis-local
         restart: unless-stopped
         environment:
-            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_PASSWORD=${REDIS_PASSWORD:-redis}
         volumes:
             - redis_data:/data
         ports:
             - "6379:6379"
         networks:
-            - app_network
-        command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
+            - exertion_network
+        command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-redis}
 
 volumes:
     mysql_data:
@@ -94,5 +100,5 @@ volumes:
         driver: local
 
 networks:
-    app_network:
+    exertion_network:
         driver: bridge

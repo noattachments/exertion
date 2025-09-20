@@ -21,7 +21,7 @@ export GIT_COMMIT=$GIT_COMMIT
 
 # Build images
 echo "📦 Building images..."
-docker-compose build
+docker-compose -f docker-compose.local.yml build
 
 # Tag images for registry
 echo "🏷️  Tagging images..."
