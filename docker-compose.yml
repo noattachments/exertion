@@ -1,5 +1,11 @@
 services:
     app:
+        build:
+            context: .
+            dockerfile: .docker/php/Dockerfile
+            tags:
+                - exertion-app:${VERSION:-latest}
+                - exertion-app:${GIT_COMMIT:-latest}
         image: exertion-app:${VERSION:-latest}
         container_name: exertion-app
         restart: unless-stopped
@@ -32,6 +38,12 @@ services:
                     memory: 256M
 
     webserver:
+        build:
+            context: .
+            dockerfile: .docker/nginx/Dockerfile
+            tags:
+                - exertion-nginx:${VERSION:-latest}
+                - exertion-nginx:${GIT_COMMIT:-latest}
         image: exertion-nginx:${VERSION:-latest}
         container_name: exertion-nginx
         restart: unless-stopped
@@ -55,6 +67,9 @@ services:
                     memory: 64M
 
     database:
+        build:
+            context: .
+            dockerfile: .docker/mysql/Dockerfile
         image: mysql:8.0
         container_name: exertion-mysql
         restart: unless-stopped
@@ -76,6 +91,9 @@ services:
                     memory: 512M
 
     redis:
+        build:
+            context: .
+            dockerfile: .docker/redis/Dockerfile
         image: redis:7-alpine
         container_name: exertion-redis
         restart: unless-stopped
