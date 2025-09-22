@@ -62,7 +62,7 @@ composer.lock
 # Docker
 Dockerfile*
 docker-compose*.yml
-.docker/
+# .docker/ - Keep .docker directory for build context
 
 # CI/CD
 .github/

@@ -183,3 +183,51 @@ info: ## Show environment information
 	@echo "Docker Compose Files:"
 	@echo "  Local: docker-compose.local.yml"
 	@echo "  Production: docker-compose.yml"
+
+# CircleCI Integration
+circleci-test: ## Run tests in CircleCI environment
+	@echo "🔄 Running CircleCI test workflow..."
+	@export VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) && \
+	docker-compose -f docker-compose.local.yml build
+	@export VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) && \
+	docker-compose -f docker-compose.local.yml up -d
+	@echo "⏳ Waiting for services to be ready..."
+	@sleep 30
+	@echo "🗄️  Waiting for database to be ready..."
+	@for i in {1..30}; do \
+		if docker-compose -f docker-compose.local.yml exec -T database mysqladmin ping -h localhost -u root -proot --silent 2>/dev/null; then \
+			echo "✅ Database is ready!"; \
+			break; \
+		fi; \
+		echo "⏳ Waiting for database... ($$i/30)"; \
+		sleep 2; \
+	done
+	@echo "🔴 Waiting for Redis to be ready..."
+	@for i in {1..30}; do \
+		if docker-compose -f docker-compose.local.yml exec -T redis redis-cli -a redis ping 2>/dev/null | grep -q PONG; then \
+			echo "✅ Redis is ready!"; \
+			break; \
+		fi; \
+		echo "⏳ Waiting for Redis... ($$i/30)"; \
+		sleep 2; \
+	done
+	@make migrate
+	@make test
+	@make test-php
+
+circleci-security: ## Run security scans in CircleCI environment
+	@echo "🔒 Running CircleCI security workflow..."
+	@export VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) && \
+	docker-compose -f docker-compose.local.yml build
+	@export VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) && \
+	docker-compose -f docker-compose.local.yml up -d
+	@sleep 10
+	@echo "Running security scans..."
+	@docker-compose -f docker-compose.local.yml exec -T app composer audit
+	@docker-compose -f docker-compose.local.yml exec -T app npm audit --audit-level moderate
+
+circleci-build: ## Build images for CircleCI deployment
+	@echo "🏗️  Building images for CircleCI deployment..."
+	@export VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) && \
+	docker-compose -f docker-compose.local.yml build
+	@echo "✅ Images built successfully for deployment"

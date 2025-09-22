@@ -44,8 +44,15 @@ COPY . /app
 
 # Run composer scripts after all files are in place
 RUN composer run-script post-autoload-dump
-RUN npm ci --omit=dev && npm run prod
-RUN php artisan wayfinder:generate --with-form
+
+# Install Node dependencies
+RUN npm ci --omit=dev
+
+# Use build-specific Vite config (without wayfinder)
+RUN cp vite.config.build.ts vite.config.ts
+
+# Build frontend assets
+RUN npm run build
 
 # --- Production stage ---
 FROM php:8.3-fpm-alpine AS production
@@ -53,16 +60,17 @@ FROM php:8.3-fpm-alpine AS production
 #
 WORKDIR /var/www/html
 
-# Install only runtime dependencies (no build tools)
+# Install runtime dependencies and minimal build tools for PECL
 RUN apk add --no-cache \
-    libzip libpng libjpeg-turbo freetype \
-    oniguruma icu zlib libxml2 \
+    libzip libzip-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo-dev freetype freetype-dev \
+    oniguruma oniguruma-dev icu icu-dev zlib zlib-dev libxml2 libxml2-dev \
+    autoconf make gcc musl-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql zip gd mbstring intl opcache exif pcntl xml \
     && pecl install redis \
     && docker-php-ext-enable redis \
-    && apk del --no-cache build-base autoconf make g++
+    && apk del autoconf make gcc musl-dev
 
 # Create non-root user
 RUN addgroup -g 1000 app && \
@@ -79,8 +87,9 @@ COPY --from=builder --chown=app:app /app/database ./database
 COPY --from=builder --chown=app:app /app/resources/views ./resources/views
 COPY --from=builder --chown=app:app /app/artisan ./artisan
 
-# Set proper permissions
-RUN chmod -R 755 bootstrap \
+# Create storage directory and set proper permissions
+RUN mkdir -p storage/logs \
+    && chmod -R 755 bootstrap \
     && chmod -R 775 bootstrap/cache \
     && chmod -R 755 storage \
     && chmod -R 775 storage/logs

@@ -18,10 +18,10 @@ services:
             - LOG_CHANNEL=stderr
             - DB_HOST=database
             - DB_DATABASE=${DB_DATABASE:-exertion}
-            - DB_USERNAME=${DB_USERNAME:-exertion_user}
+            - DB_USERNAME=${DB_USERNAME:-app}
             - DB_PASSWORD=${DB_PASSWORD:-exertion}
             - REDIS_HOST=redis
-            - REDIS_PASSWORD=${REDIS_PASSWORD:-redis}
+            - REDIS_PASSWORD=redis
         depends_on:
             - database
             - redis
@@ -66,11 +66,10 @@ services:
         environment:
             - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root}
             - MYSQL_DATABASE=${DB_DATABASE:-exertion}
-            - MYSQL_USER=${DB_USERNAME:-exertion_user}
+            - MYSQL_USER=${DB_USERNAME:-app}
             - MYSQL_PASSWORD=${DB_PASSWORD:-exertion}
         volumes:
             - mysql_data:/var/lib/mysql
-            - ./.docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
         ports:
             - "3306:3306"
         networks:
