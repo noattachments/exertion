@@ -21,7 +21,6 @@ endif
 VERSION ?= $(shell git describe --tags --always 2>/dev/null || echo "latest")
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "latest")
 REGISTRY ?= $(REGISTRY_SRC)
-REGISTRY ?= your-registry.com
 
 # Local Development Commands
 build-local: ## Build Docker images for local development
