@@ -3,9 +3,7 @@ services:
         build:
             context: .
             dockerfile: .docker/php/Dockerfile
-            tags:
-                - exertion-app:${VERSION:-latest}
-                - exertion-app:${GIT_COMMIT:-latest}
+        image: exertion-app:${VERSION:-latest}
         container_name: exertion-app-local
         restart: unless-stopped
         working_dir: /var/www/html
@@ -37,9 +35,7 @@ services:
         build:
             context: .
             dockerfile: .docker/nginx/Dockerfile
-            tags:
-                - exertion-nginx:${VERSION:-latest}
-                - exertion-nginx:${GIT_COMMIT:-latest}
+        image: exertion-nginx:${VERSION:-latest}
         container_name: exertion-nginx-local
         restart: unless-stopped
         ports:
