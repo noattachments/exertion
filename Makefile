@@ -1,7 +1,7 @@
 # Exertion Application Makefile
 # Provides easy commands for Docker development and production deployment
 
-.PHONY: help build-local build-prod up-local up-prod down-local down-prod restart-local restart-prod logs-local logs-prod shell shell-php test test-php artisan migrate seed fresh clean build-push test-circleci test-circleci-quick test-circleci-full
+.PHONY: help build-local build-prod up-local up-prod down-local down-prod restart-local restart-prod logs-local logs-prod shell shell-php test test-php artisan migrate seed fresh clean build-push test-circleci test-circleci-quick test-circleci-full show-config
 
 # Default target
 help: ## Show this help message
@@ -11,9 +11,16 @@ help: ## Show this help message
 	@echo "Available commands:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+# Load .env file if it exists
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
 # Environment variables
 VERSION ?= $(shell git describe --tags --always 2>/dev/null || echo "latest")
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "latest")
+REGISTRY ?= $(REGISTRY_SRC)
 REGISTRY ?= your-registry.com
 
 # Local Development Commands
@@ -241,10 +248,21 @@ test-circleci-quick: ## Run quick CircleCI tests (requires services to be runnin
 	@echo "🧪 Running quick CircleCI tests..."
 	@./test-circleci-quick.sh
 
-test-circleci-build-push: ## Run quick CircleCI tests (requires services to be running)
-	@echo "🧪 Running build and push CircleCI tests..."
-	@./build-and-push.sh
+test-circleci-build-push: ## Run build and push tests with current registry
+	@echo "🧪 Running build and push tests..."
+	@echo "Registry: $(REGISTRY)"
+	@./build-and-push.sh $(REGISTRY) $(VERSION)
 
 test-circleci-full: ## Run full CircleCI test workflow (includes environment setup)
 	@echo "🧪 Running full CircleCI test workflow..."
 	@./test-circleci-local.sh
+
+# Configuration Commands
+show-config: ## Show current configuration (registry, version, etc.)
+	@echo "📋 Current Configuration"
+	@echo "======================="
+	@echo "Registry: $(REGISTRY)"
+	@echo "Version: $(VERSION)"
+	@echo "Git Commit: $(GIT_COMMIT)"
+	@echo "Registry Source: $(REGISTRY_SRC)"
+	@echo "======================="
