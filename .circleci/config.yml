@@ -78,9 +78,9 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      
+
       - setup-docker-compose
-      
+
       - run:
           name: "Set environment variables"
           command: |
@@ -91,29 +91,29 @@ jobs:
             echo 'export DB_DATABASE=exertion_test' >> $BASH_ENV
             echo 'export DB_USERNAME=exertion_user' >> $BASH_ENV
             source $BASH_ENV
-      
+
       - run:
           name: "Build and start services"
           command: |
             make build-local
             make up-local
-      
+
       - wait-for-services
-      
+
       - run:
           name: "Run database migrations"
           command: |
             make migrate
-      
+
       - run-laravel-tests
-      
+
       - run-javascript-tests
-      
+
       - run:
           name: "Generate code coverage"
           command: |
             docker-compose exec -T app php artisan test --coverage --coverage-html=storage/coverage
-      
+
       - run:
           name: "Store test results"
           command: |
@@ -122,16 +122,16 @@ jobs:
             docker-compose logs database > ~/test-results/database.log
             docker-compose logs redis > ~/test-results/redis.log
           when: always
-      
+
       - store_test_results:
           path: ~/test-results
           when: always
-      
+
       - store_artifacts:
           path: ~/project/storage/coverage
           destination: coverage
           when: always
-      
+
       - run:
           name: "Cleanup"
           command: |
@@ -145,9 +145,9 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      
+
       - setup-docker-compose
-      
+
       - run:
           name: "Set environment variables"
           command: |
@@ -156,20 +156,20 @@ jobs:
             echo 'export DB_PASSWORD=exertion' >> $BASH_ENV
             echo 'export REDIS_PASSWORD=redis' >> $BASH_ENV
             source $BASH_ENV
-      
+
       - run:
           name: "Build images for security scan"
           command: |
             make build-local
-      
+
       - security-scan
-      
+
       - run:
           name: "PHP Code Quality"
           command: |
             docker-compose exec -T app ./vendor/bin/pint --test
             docker-compose exec -T app ./vendor/bin/phpstan analyse --memory-limit=2G
-      
+
       - run:
           name: "Cleanup"
           command: |
@@ -183,9 +183,9 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      
+
       - setup-docker-compose
-      
+
       - run:
           name: "Set environment variables"
           command: |
@@ -198,23 +198,36 @@ jobs:
               echo "export REGISTRY=${CIRCLE_PROJECT_USERNAME:-your-registry.com}" >> $BASH_ENV
             fi
             source $BASH_ENV
-      
+
       - docker/check:
           docker-username: DOCKER_USERNAME
           docker-password: DOCKER_PASSWORD
-      
+
+      - run:
+          name: "Debug environment"
+          command: |
+            echo "Registry: ${REGISTRY}"
+            echo "Version: ${VERSION}"
+            echo "Git Commit: ${GIT_COMMIT}"
+            echo "Checking .env file:"
+            ls -la .env* || echo "No .env files found"
+            echo "Creating minimal .env for CircleCI:"
+            echo "REGISTRY_SRC=${REGISTRY}" > .env
+            cat .env
+            make show-config
+
       - run:
           name: "Build and push images"
           command: |
             make build-push REGISTRY=${REGISTRY}
-      
+
       - run:
           name: "Update deployment manifests"
           command: |
             # Update image tags in deployment files
             sed -i "s|exertion-app:latest|${REGISTRY}/exertion-app:${VERSION}|g" docker-compose.yml
             sed -i "s|exertion-nginx:latest|${REGISTRY}/exertion-nginx:${VERSION}|g" docker-compose.yml
-      
+
       - run:
           name: "Store deployment artifacts"
           command: |
@@ -223,7 +236,7 @@ jobs:
             cp .env.prod.template ~/deployment/.env.template
             echo "VERSION=${VERSION}" > ~/deployment/version.txt
             echo "GIT_COMMIT=${GIT_COMMIT}" >> ~/deployment/version.txt
-      
+
       - store_artifacts:
           path: ~/deployment
           destination: deployment
@@ -235,10 +248,10 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      
+
       - attach_workspace:
           at: ~/deployment
-      
+
       - run:
           name: "Deploy to staging"
           command: |
@@ -246,7 +259,7 @@ jobs:
             # For now, we'll just validate the deployment configuration
             echo "Deploying version $(cat ~/deployment/version.txt) to staging"
             echo "Deployment configuration validated successfully"
-      
+
       - run:
           name: "Run smoke tests"
           command: |
@@ -260,10 +273,10 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      
+
       - attach_workspace:
           at: ~/deployment
-      
+
       - run:
           name: "Deploy to production"
           command: |
@@ -271,7 +284,7 @@ jobs:
             # For now, we'll just validate the deployment configuration
             echo "Deploying version $(cat ~/deployment/version.txt) to production"
             echo "Production deployment configuration validated successfully"
-      
+
       - run:
           name: "Run production health checks"
           command: |
