@@ -43,7 +43,7 @@ services:
         container_name: exertion-nginx-local
         restart: unless-stopped
         ports:
-            - "8080:8080"
+            - "80:80"
         volumes:
             - .:/var/www/html
             - ./storage/logs:/var/www/html/storage/logs
