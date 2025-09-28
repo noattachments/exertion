@@ -1,7 +1,7 @@
 # Exertion Application Makefile
 # Provides easy commands for Docker development and production deployment
 
-.PHONY: help build-local build-prod up-local up-prod down-local down-prod restart-local restart-prod logs-local logs-prod shell shell-php test test-php artisan migrate seed fresh clean build-push
+.PHONY: help build-local build-prod up-local up-prod down-local down-prod restart-local restart-prod logs-local logs-prod shell shell-php test test-php artisan migrate seed fresh clean build-push test-circleci test-circleci-quick test-circleci-full
 
 # Default target
 help: ## Show this help message
@@ -231,3 +231,20 @@ circleci-build: ## Build images for CircleCI deployment
 	@export VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) && \
 	docker-compose -f docker-compose.local.yml build
 	@echo "✅ Images built successfully for deployment"
+
+# CircleCI Testing Commands
+test-circleci: ## Run CircleCI test workflow (quick version)
+	@echo "🧪 Running CircleCI test workflow..."
+	@./test-circleci-quick.sh
+
+test-circleci-quick: ## Run quick CircleCI tests (requires services to be running)
+	@echo "🧪 Running quick CircleCI tests..."
+	@./test-circleci-quick.sh
+
+test-circleci-build-push: ## Run quick CircleCI tests (requires services to be running)
+	@echo "🧪 Running build and push CircleCI tests..."
+	@./build-and-push.sh
+
+test-circleci-full: ## Run full CircleCI test workflow (includes environment setup)
+	@echo "🧪 Running full CircleCI test workflow..."
+	@./test-circleci-local.sh
