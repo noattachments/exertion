@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#
+export DOCKER_BUILDKIT=1;
+
+# Set variables
+CURRENT_DIR=$(pwd)
+DOCKER_COMPOSE_PROJECT_NAME=genesis
+#DOCKER_DIR=$(pwd)/.docker
+DOCKER_COMPOSE_DIR=$CURRENT_DIR
+DOCKER_ENV_FILE=$CURRENT_DIR/.env
+DOCKER_COMPOSE_FILE=$DOCKER_COMPOSE_DIR/docker-compose.yml
+DOCKER_COMPOSE_COMMAND="docker compose -p $DOCKER_COMPOSE_PROJECT_NAME --env-file $DOCKER_ENV_FILE"
+DOCKER_COMPOSE="$DOCKER_COMPOSE_COMMAND -f $DOCKER_COMPOSE_FILE --verbose"
+DOCKER_SERVICE_NAME=${DOCKER_SERVICE_NAME:-} # Default to empty if not set
+#DOCKER_BUILD_COMMAND="docker build -p $DOCKER_COMPOSE_PROJECT_NAME --env-file $DOCKER_ENV_FILE"
+
+# Build the Docker service
+#$DOCKER_COMPOSE --progress=plain build --no-cache $DOCKER_SERVICE_NAME
+
+# Prune existing images
+docker builder prune --all -f;
+
+# stop all containers
+docker stop $(docker ps -aq);
+
+
+# Clean up stopped containers
+docker-compose down -v --remove-orphans;
+
+# remove all containers
+docker rm $(docker ps -aq);
+docker builder prune -f --all;
+
+# Remove stopped containers
+docker container prune -f;
+
+# Remove stopped volume
+docker volume prune -f;
+
+# Remove dangling images
+docker image prune --all -f;
