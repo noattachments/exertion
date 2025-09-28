@@ -6,9 +6,23 @@
 set -e
 
 # Configuration
-REGISTRY=${1:-"your-registry.com"}
+# Load .env file if it exists
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+# Use REGISTRY_SRC from .env as default, fallback to command line arg, then default
+REGISTRY=${1:-${REGISTRY_SRC:-"your-registry.com"}}
 VERSION=${2:-$(git describe --tags --always)}
 GIT_COMMIT=$(git rev-parse --short HEAD)
+
+# Validate registry
+if [ "$REGISTRY" = "your-registry.com" ]; then
+    echo "⚠️  Warning: Using default registry 'your-registry.com'"
+    echo "   Set REGISTRY_SRC in .env file, pass as first argument, or set REGISTRY environment variable"
+    echo "   Example: ./build-and-push.sh myregistry.com v1.0.0"
+    echo "   Or add to .env: REGISTRY_SRC=myregistry.com"
+fi
 
 echo "🚀 Building and pushing Docker images..."
 echo "Registry: $REGISTRY"
@@ -25,13 +39,13 @@ docker-compose -f docker-compose.local.yml build
 
 # Tag images for registry
 echo "🏷️  Tagging images..."
-docker tag exertion-app:latest $REGISTRY/exertion-app:$VERSION
-docker tag exertion-app:latest $REGISTRY/exertion-app:$GIT_COMMIT
-docker tag exertion-app:latest $REGISTRY/exertion-app:latest
+docker tag exertion-app:$VERSION $REGISTRY/exertion-app:$VERSION
+docker tag exertion-app:$VERSION $REGISTRY/exertion-app:$GIT_COMMIT
+docker tag exertion-app:$VERSION $REGISTRY/exertion-app:latest
 
-docker tag exertion-nginx:latest $REGISTRY/exertion-nginx:$VERSION
-docker tag exertion-nginx:latest $REGISTRY/exertion-nginx:$GIT_COMMIT
-docker tag exertion-nginx:latest $REGISTRY/exertion-nginx:latest
+docker tag exertion-nginx:$VERSION $REGISTRY/exertion-nginx:$VERSION
+docker tag exertion-nginx:$VERSION $REGISTRY/exertion-nginx:$GIT_COMMIT
+docker tag exertion-nginx:$VERSION $REGISTRY/exertion-nginx:latest
 
 # Login to registry (uncomment and configure as needed)
 # echo "🔐 Logging into registry..."

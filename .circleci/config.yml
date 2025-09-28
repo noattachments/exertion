@@ -191,7 +191,12 @@ jobs:
           command: |
             echo 'export VERSION=${CIRCLE_TAG:-${CIRCLE_SHA1:0:7}}' >> $BASH_ENV
             echo 'export GIT_COMMIT=${CIRCLE_SHA1:0:7}' >> $BASH_ENV
-            echo 'export REGISTRY=${CIRCLE_PROJECT_USERNAME}' >> $BASH_ENV
+            # Use CIRCLE_PROJECT_USERNAME for Docker Hub, or set DOCKER_REGISTRY env var for other registries
+            if [ -n "$DOCKER_REGISTRY" ]; then
+              echo "export REGISTRY=$DOCKER_REGISTRY" >> $BASH_ENV
+            else
+              echo "export REGISTRY=${CIRCLE_PROJECT_USERNAME:-your-registry.com}" >> $BASH_ENV
+            fi
             source $BASH_ENV
       
       - docker/check:
@@ -201,14 +206,14 @@ jobs:
       - run:
           name: "Build and push images"
           command: |
-            make build-push REGISTRY=${CIRCLE_PROJECT_USERNAME}
+            make build-push REGISTRY=${REGISTRY}
       
       - run:
           name: "Update deployment manifests"
           command: |
             # Update image tags in deployment files
-            sed -i "s|exertion-app:latest|${CIRCLE_PROJECT_USERNAME}/exertion-app:${VERSION}|g" docker-compose.yml
-            sed -i "s|exertion-nginx:latest|${CIRCLE_PROJECT_USERNAME}/exertion-nginx:${VERSION}|g" docker-compose.yml
+            sed -i "s|exertion-app:latest|${REGISTRY}/exertion-app:${VERSION}|g" docker-compose.yml
+            sed -i "s|exertion-nginx:latest|${REGISTRY}/exertion-nginx:${VERSION}|g" docker-compose.yml
       
       - run:
           name: "Store deployment artifacts"
