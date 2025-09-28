@@ -220,7 +220,7 @@ jobs:
           name: "Build and push images"
           command: |
             echo "🚀 Building and pushing images to registry..."
-            ~/build-and-push.sh $(REGISTRY) $(VERSION)
+            ./build-and-push.sh $(REGISTRY) $(VERSION)
 
       - run:
           name: "Update deployment manifests"
